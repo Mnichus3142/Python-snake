@@ -1,1 +1,1 @@
-# Python-snake
+# Snane in cmd written in python
