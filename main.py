@@ -5,6 +5,7 @@ import os
 import time
 
 gameMap = []
+basePlayerPos = []
 playerPos = []
 # 0 - bariers, 1 - Holes in the wall, 2 - 3 lives, 3 - Regenerate map after every 5 apples
 active = [False, False, False, False]
@@ -24,6 +25,8 @@ art = """
 """
 
 def createMap (sizeX, sizeY):
+    ax = 3
+    ay = 3
     for i in range(sizeY + 2):
         temp = []
         for j in range(sizeX + 2):
@@ -35,8 +38,24 @@ def createMap (sizeX, sizeY):
                 temp.append('.')
         if active[0]:
             amount = math.floor(random.random() * 10)
-            
-        gameMap.append(temp)
+            wall_temp = []
+            for i in range(amount):
+                place = math.floor(random.random() * 10)
+                if place not in wall_temp:
+                    wall_temp.append(place)
+                    temp[place] = '#'
+                else:
+                    while place in wall_temp:
+                        place = math.floor(random.random() * 10)
+        gameMap.append(temp) 
+                
+    if active[1]:
+        placeX = math.floor(random.random() * 10) + 1
+        placeY = math.floor(random.random() * 10) + 1
+        gameMap[0][placeX] = '.'
+        gameMap[-1][placeX] = '.'
+        gameMap[placeY][0] = '.'
+        gameMap[placeY][-1] = '.'
         
 def createApple(sizeX, sizeY):
     x = random.randint(0, sizeX - 1)
@@ -89,7 +108,7 @@ def movePlayer(sizeX, sizeY):
             move = 'right'
             
         start = True
-            
+                    
     else:
         match move:
             case 'up':
@@ -107,9 +126,19 @@ def movePlayer(sizeX, sizeY):
                 
     
     newPlayerPos = [[playerPos[0][0] + x, playerPos[0][1] + y]]
+    
+    if newPlayerPos[0][1] == -1:
+        newPlayerPos[0][1] = sizeY + 1
+    elif newPlayerPos[0][1] == sizeY + 2:
+        newPlayerPos[0][1] = 0
+        
+    if newPlayerPos[0][0] == -1:
+        newPlayerPos[0][0] = sizeX + 1
+    elif newPlayerPos[0][0] == sizeX + 2:
+        newPlayerPos[0][0] = 0
+            
     for segment in playerPos[:-1]:
         newPlayerPos.append(segment)
-    
     playerPos = newPlayerPos
     
     # Losing condition 1/2
@@ -161,15 +190,22 @@ def game():
     global gameMap
     global playerPos
     global points
+    global basePlayerPos
+    global move
+    global start
     
     gameOn = True
+    move = ''
+    start = False
     gameMap = []
     playerPos = []
     points = 0
     
+    basePlayerPos = [math.floor(sizeY / 2), math.floor(sizeX / 2)]
+    
     createMap(sizeX, sizeY)
     
-    playerPos.append([math.floor(sizeY / 2), math.floor(sizeX / 2)])
+    playerPos.append(basePlayerPos)
     gameMap[playerPos[0][1]][playerPos[0][0]] = '*'
     
     for i in range(apples):
@@ -201,35 +237,6 @@ def executeActual(i):
             x = True
             
             while x:
-                os.system('cls')
-                print(f"Actual map size {sizeX}x{sizeY}\n\nChoose a number 5 or higher to change value")
-                try:
-                    tempX = int(input("New width: "))
-                    if tempX >= 5:
-                        sizeX = tempX
-                    else:
-                        print("You've entered wrong width value, width not changed")
-                        time.sleep(0.3)
-                        return 0
-                    tempY = int(input("New height: "))
-                    if tempY >= 5:
-                        sizeY = tempY
-                    else:
-                        print("You've entered wrong height value, height not changed")
-                        time.sleep(0.3)
-                        return 0
-                    if (sizeX * sizeY) < apples:
-                        apples = (sizeX * sizeY) / 2
-                    os.system('cls')
-                    print('Changes saved')
-                    return 0 
-                except:
-                    doNothing()
-
-        case 2:
-            x = True
-            
-            while x:
                 try:
                     os.system('cls')
                     print(f"Actual amount of starting apples {apples}\n\nThere must be at least 1 apple at the beginning of the game and max amount of apples is equal to max fields / 2")
@@ -243,10 +250,14 @@ def executeActual(i):
                         return 0
                 except:
                     doNothing()
-        case 3:
+        case 2:
             x = True
             actualPosition = 0
-            modifiers = ['-> [ ] More barriers on the map', '[ ] Holes in the walls', '[ ] 3 lives', '[ ] Regenerate barriers after eating every 5 apples']
+            modifiers = ['[ ] More barriers on the map', '[ ] Holes in the walls', '[ ] 3 lives', '[ ] Regenerate barriers after eating every 5 apples']
+            for i in range(len(modifiers)):
+                if active[i]:
+                    modifiers[i] = f'[*]{modifiers[i][3:]}'
+            modifiers[0] = f'-> {modifiers[0]}'
             
             while x:
                 try:
@@ -256,6 +267,7 @@ def executeActual(i):
                     
                     for i in modifiers:
                         print(i)
+                        
                     modifiers[actualPosition] = f'{modifiers[actualPosition][3:]}'
                     if msvcrt.kbhit():
                         key = msvcrt.getwch()
@@ -280,16 +292,18 @@ def executeActual(i):
                                     modifiers[0] = f'[*]{modifiers[0][3:]}'
                                     active[0] = True
                         if key == '\x08':
+                            os.system('cls')
+                            print('Changes saved')
                             return 0
                     modifiers[actualPosition] = f'-> {modifiers[actualPosition]}'
                 except:
                     doNothing()
-        case 4:
+        case 3:
             return 1
             
 def menu ():
     actualPosition = 0
-    menuElements = ['-> Play game', 'Change map size','Change number of starting apples', 'Modifiers', 'Exit']
+    menuElements = ['-> Play game', 'Change number of starting apples', 'Modifiers', 'Exit']
        
     os.system('cls')
         
