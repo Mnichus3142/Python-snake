@@ -7,8 +7,8 @@ import time
 gameMap = []
 basePlayerPos = []
 playerPos = []
-# 0 - bariers, 1 - Holes in the wall, 2 - 3 lives, 3 - Regenerate map after every 5 apples
-active = [False, False, False, False]
+# 0 - bariers, 1 - Holes in the wall, 2 - 3 lives, 3 - Regenerate map after every 5 apples, 4 - Enemies
+active = [False, False, False, False, False]
 move = ''
 start = False
 points = 0
@@ -18,6 +18,9 @@ sizeY = 10
 apples = 3
 lives = 3
 from_file = False
+enemies = []
+enemy_action = 0
+enemy_direction = 'forward'
 art = """
      ____              _        
     / ___| _ __   __ _| | _____ 
@@ -156,14 +159,14 @@ def movePlayer(sizeX, sizeY):
         newPlayerPos.append(segment)
     playerPos = newPlayerPos
     
-    # Losing condition 1/2
+    # Losing condition 1/3
     if gameMap[playerPos[0][1]][playerPos[0][0]] == '#':
         os.system('cls')
         if active[2] and lives > 1:
             lives -= 1
             move = ''
             start = False
-            basePlayerPos = [math.floor(sizeY / 2), math.floor(sizeX / 2)]
+            basePlayerPos = [random.randint(1, sizeY), random.randint(1, sizeX)]
             for i in range(len(playerPos)):
                 playerPos[i] = basePlayerPos
             print('You lost one live, the snake drove into the wall')
@@ -174,14 +177,32 @@ def movePlayer(sizeX, sizeY):
             highscoreChanger(points)
             return False
         
-    # Losing condition 2/2
+    # Losing condition 2/3
+    if gameMap[playerPos[0][1]][playerPos[0][0]] == '%':
+        os.system('cls')
+        if active[2] and lives > 1:
+            lives -= 1
+            move = ''
+            start = False
+            basePlayerPos = [random.randint(1, sizeY), random.randint(1, sizeX)]
+            for i in range(len(playerPos)):
+                playerPos[i] = basePlayerPos
+            print('You lost one live, the snake drove into the enemy')
+            time.sleep(2)
+        else:
+            print('You lost, the snake drove into the enemy')
+            time.sleep(2)
+            highscoreChanger(points)
+            return False  
+        
+    # Losing condition 3/3
     if gameMap[playerPos[0][1]][playerPos[0][0]] == '*' and start:
         os.system('cls')
         if active[2] and lives > 1:
             lives -= 1
             move = ''
             start = False
-            basePlayerPos = [math.floor(sizeY / 2), math.floor(sizeX / 2)]
+            basePlayerPos = [random.randint(1, sizeY), random.randint(1, sizeX)]
             for i in range(len(playerPos)):
                 playerPos[i] = basePlayerPos
             print('You lost one live, the snake drove into himself')
@@ -223,7 +244,55 @@ def movePlayer(sizeX, sizeY):
     
 def doNothing():
     return 0
-          
+
+def enemy():
+    global enemies
+    global enemy_action
+    global enemy_direction
+    global sizeX
+    global sizeY
+
+    if len(enemies) == 0:
+        x1 = random.randint(2, sizeX - 2)
+        y1 = random.randint(2, sizeY - 2)
+        enemies.append([[y1 - 1, x1], [y1, x1], [y1 + 1, x1]])
+        x2 = random.randint(2, sizeX - 2)
+        y2 = random.randint(2, sizeY - 2)
+        enemies.append([[y2, x2 - 1], [y2, x2], [y2, x2 + 1]])
+    else:
+        for i in range(len(enemies)):
+            for pos in enemies[i]:
+                gameMap[pos[0]][pos[1]] = '.'
+
+        for i in range(len(enemies)):
+            new_pos = []
+            for x in range(3):
+                new_y = enemies[i][x][0]
+                new_x = enemies[i][x][1]
+
+                if enemy_direction == 'forward':
+                    if i == 0:
+                        new_y += 1
+                    else:
+                        new_x += 1
+                else:
+                    if i == 0:
+                        new_y -= 1
+                    else:
+                        new_x -= 1
+
+                if 0 < new_y < sizeY and 0 < new_x < sizeX and gameMap[new_y][new_x] == '.':
+                    new_pos.append([new_y, new_x])
+
+            if len(new_pos) == 3:
+                enemies[i] = new_pos
+            else:
+                enemy_direction = 'backward' if enemy_direction == 'forward' else 'forward'
+
+        for i in range(len(enemies)):
+            for pos in enemies[i]:
+                gameMap[pos[0]][pos[1]] = '%'
+            
 def game():
     global sizeX
     global sizeY
@@ -258,6 +327,8 @@ def game():
 
     while gameOn:
         time.sleep(0.3)
+        if active[4]:
+            enemy()
         if movePlayer(sizeX, sizeY) == False:
             gameOn = False
           
@@ -296,8 +367,9 @@ def executeActual(i):
                     doNothing()
         case 2:
             x = True
+            
             actualPosition = 0
-            modifiers = ['[ ] More barriers on the map', '[ ] Holes in the walls', '[ ] 3 lives', '[ ] Regenerate barriers after eating every 5 apples']
+            modifiers = ['[ ] More barriers on the map', '[ ] Holes in the walls', '[ ] 3 lives', '[ ] Regenerate barriers after eating every 5 apples', '[ ] Enemies']
             for i in range(len(modifiers)):
                 if active[i]:
                     modifiers[i] = f'[*]{modifiers[i][3:]}'
