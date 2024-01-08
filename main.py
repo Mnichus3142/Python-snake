@@ -6,6 +6,8 @@ import time
 
 gameMap = []
 playerPos = []
+# 0 - bariers, 1 - Holes in the wall, 2 - 3 lives, 3 - Regenerate map after every 5 apples
+active = [False, False, False, False]
 move = ''
 start = False
 points = 0
@@ -31,6 +33,9 @@ def createMap (sizeX, sizeY):
                 temp.append('#')
             else:
                 temp.append('.')
+        if active[0]:
+            amount = math.floor(random.random() * 10)
+            
         gameMap.append(temp)
         
 def createApple(sizeX, sizeY):
@@ -186,6 +191,7 @@ def executeActual(i):
     global sizeX
     global sizeY
     global apples
+    global active
     
     match i:
         case 0:
@@ -198,7 +204,7 @@ def executeActual(i):
                 os.system('cls')
                 print(f"Actual map size {sizeX}x{sizeY}\n\nChoose a number 5 or higher to change value")
                 try:
-                    tempX = int(input("New height: "))
+                    tempX = int(input("New width: "))
                     if tempX >= 5:
                         sizeX = tempX
                     else:
@@ -238,11 +244,52 @@ def executeActual(i):
                 except:
                     doNothing()
         case 3:
+            x = True
+            actualPosition = 0
+            modifiers = ['-> [ ] More barriers on the map', '[ ] Holes in the walls', '[ ] 3 lives', '[ ] Regenerate barriers after eating every 5 apples']
+            
+            while x:
+                try:
+                    time.sleep(0.4)
+                    os.system('cls')
+                    print('Here you can add modifiers to your game\nPress backspace to go back\n')
+                    
+                    for i in modifiers:
+                        print(i)
+                    modifiers[actualPosition] = f'{modifiers[actualPosition][3:]}'
+                    if msvcrt.kbhit():
+                        key = msvcrt.getwch()
+                        
+                        if key == 'w':
+                            if actualPosition >= 1:
+                                actualPosition -= 1
+                        if key == 's':
+                            if actualPosition <= len(modifiers) - 2:
+                                actualPosition += 1
+                        if key == '\r':
+                            if active[actualPosition]:
+                                modifiers[actualPosition] = f'[ ]{modifiers[actualPosition][3:]}'
+                                active[actualPosition] = False
+                                if actualPosition == 0:
+                                    modifiers[3] = f'[ ]{modifiers[3][3:]}'
+                                    active[3] = False
+                            else:
+                                modifiers[actualPosition] = f'[*]{modifiers[actualPosition][3:]}'
+                                active[actualPosition] = True
+                                if actualPosition == 3:
+                                    modifiers[0] = f'[*]{modifiers[0][3:]}'
+                                    active[0] = True
+                        if key == '\x08':
+                            return 0
+                    modifiers[actualPosition] = f'-> {modifiers[actualPosition]}'
+                except:
+                    doNothing()
+        case 4:
             return 1
             
 def menu ():
     actualPosition = 0
-    menuElements = ['   Play game', 'Change map size','Change number of starting apples', 'Exit']
+    menuElements = ['-> Play game', 'Change map size','Change number of starting apples', 'Modifiers', 'Exit']
        
     os.system('cls')
         
