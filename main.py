@@ -16,6 +16,8 @@ highscore = 0
 sizeX = 10
 sizeY = 10
 apples = 3
+lives = 3
+from_file = False
 art = """
      ____              _        
     / ___| _ __   __ _| | _____ 
@@ -25,50 +27,62 @@ art = """
 """
 
 def createMap (sizeX, sizeY):
-    ax = 3
-    ay = 3
-    for i in range(sizeY + 2):
-        temp = []
-        for j in range(sizeX + 2):
-            if i == 0 or i == sizeY + 1:
-                temp.append('#')
-            elif j == 0 or j == sizeX + 1:
-                temp.append('#')
-            else:
-                temp.append('.')
-        if active[0]:
-            amount = math.floor(random.random() * 10)
-            wall_temp = []
-            for i in range(amount):
-                place = math.floor(random.random() * 10)
-                if place not in wall_temp:
-                    wall_temp.append(place)
-                    temp[place] = '#'
+    global from_file
+    
+    if from_file:
+        with open('map.txt', 'r') as file:
+            lines = file.readlines()
+            for line in lines:
+                temp = []
+                for char in line.strip():
+                    temp.append(char)
+                gameMap.append(temp)
+    else:
+        for i in range(sizeY + 2):
+            temp = []
+            for j in range(sizeX + 2):
+                if i == 0 or i == sizeY + 1:
+                    temp.append('#')
+                elif j == 0 or j == sizeX + 1:
+                    temp.append('#')
                 else:
-                    while place in wall_temp:
-                        place = math.floor(random.random() * 10)
-        gameMap.append(temp) 
-                
-    if active[1]:
-        placeX = math.floor(random.random() * 10) + 1
-        placeY = math.floor(random.random() * 10) + 1
-        gameMap[0][placeX] = '.'
-        gameMap[-1][placeX] = '.'
-        gameMap[placeY][0] = '.'
-        gameMap[placeY][-1] = '.'
+                    temp.append('.')
+            if active[0]:
+                amount = math.floor(random.random() * 6)
+                wall_temp = []
+                for i in range(amount):
+                    place = math.floor(random.random() * 10)
+                    if place not in wall_temp:
+                        wall_temp.append(place)
+                        temp[place] = '#'
+                    else:
+                        while place in wall_temp:
+                            place = math.floor(random.random() * 10)
+            gameMap.append(temp) 
+                    
+        if active[1]:
+            placeX = math.floor(random.random() * 10) + 1
+            placeY = math.floor(random.random() * 10) + 1
+            gameMap[0][placeX] = '.'
+            gameMap[-1][placeX] = '.'
+            gameMap[placeY][0] = '.'
+            gameMap[placeY][-1] = '.'
         
 def createApple(sizeX, sizeY):
     x = random.randint(0, sizeX - 1)
     y = random.randint(0, sizeY - 1)
     
-    if gameMap[y][x] == '.':
+    if gameMap[y][x] == '.' and gameMap[y][x] != '#':
         gameMap[y][x] = 'o'
         return True
     
     createApple(sizeX, sizeY)
     
 def printMap(points):
-    print(f'Points: {points}\n\n')
+    if active[2]:
+        print(f'Points: {points}\t Lives: {lives}\n\n')
+    else:
+        print(f'Points: {points}\n\n')
     for i in gameMap:
         for j in i:
             print(j, end='')
@@ -82,6 +96,7 @@ def movePlayer(sizeX, sizeY):
     global points
     global move
     global start
+    global lives
     
     x = 0
     y = 0
@@ -144,24 +159,50 @@ def movePlayer(sizeX, sizeY):
     # Losing condition 1/2
     if gameMap[playerPos[0][1]][playerPos[0][0]] == '#':
         os.system('cls')
-        print('You lost, the snake drove into the wall')
-        time.sleep(2)
-        highscoreChanger(points)
-        return False
-    
+        if active[2] and lives > 1:
+            lives -= 1
+            move = ''
+            start = False
+            basePlayerPos = [math.floor(sizeY / 2), math.floor(sizeX / 2)]
+            for i in range(len(playerPos)):
+                playerPos[i] = basePlayerPos
+            print('You lost one live, the snake drove into the wall')
+            time.sleep(2)
+        else:
+            print('You lost, the snake drove into the wall')
+            time.sleep(2)
+            highscoreChanger(points)
+            return False
+        
     # Losing condition 2/2
     if gameMap[playerPos[0][1]][playerPos[0][0]] == '*' and start:
         os.system('cls')
-        print('You lost, the snake drove into himself')
-        time.sleep(2)
-        highscoreChanger(points)
-        return False
+        if active[2] and lives > 1:
+            lives -= 1
+            move = ''
+            start = False
+            basePlayerPos = [math.floor(sizeY / 2), math.floor(sizeX / 2)]
+            for i in range(len(playerPos)):
+                playerPos[i] = basePlayerPos
+            print('You lost one live, the snake drove into himself')
+            time.sleep(2)
+        else:
+            print('You lost, the snake drove into himself')
+            time.sleep(2)
+            highscoreChanger(points)
+            return False
     
     # Add a new segment to the snake
     if gameMap[playerPos[0][1]][playerPos[0][0]] == 'o':
         playerPos.append(playerPos[-1])
         points += 1
-        createApple(sizeX, sizeY)
+        if active[3] and points % 5 == 0:
+            gameMap = []
+            createMap(sizeX, sizeY)
+            for x in range(3):
+                createApple(sizeX, sizeY)
+        else:
+            createApple(sizeX, sizeY)
     
     # Clear previous snake position
     for i in range(len(gameMap)):
@@ -193,6 +234,7 @@ def game():
     global basePlayerPos
     global move
     global start
+    global lives
     
     gameOn = True
     move = ''
@@ -200,8 +242,9 @@ def game():
     gameMap = []
     playerPos = []
     points = 0
+    lives = 3
     
-    basePlayerPos = [math.floor(sizeY / 2), math.floor(sizeX / 2)]
+    basePlayerPos = [random.randint(1, sizeY), random.randint(1, sizeX)]
     
     createMap(sizeX, sizeY)
     
@@ -228,6 +271,7 @@ def executeActual(i):
     global sizeY
     global apples
     global active
+    global from_file
     
     match i:
         case 0:
@@ -299,11 +343,25 @@ def executeActual(i):
                 except:
                     doNothing()
         case 3:
+            os.system('cls')
+            if from_file:
+                from_file = False
+                print("Map is no longer loaded from file")
+                time.sleep(0.5)
+                return 0
+            else:
+                from_file = True
+                print("Map is loaded from file")
+                time.sleep(0.5)
+                return 0
+        case 4:
             return 1
             
 def menu ():
+    global from_file
+    
     actualPosition = 0
-    menuElements = ['-> Play game', 'Change number of starting apples', 'Modifiers', 'Exit']
+    menuElements = ['-> Play game', 'Change number of starting apples', 'Modifiers', 'Load map from file (map.txt)', 'Exit']
        
     os.system('cls')
         
@@ -314,7 +372,7 @@ def menu ():
         for line in art.splitlines():
             print(line)
             
-        print(f"\nHighscore: {highscore}\n")
+        print(f"\nHighscore: {highscore}\tMap from file: {from_file}\n")
         
         for i in range(len(menuElements)):
             print(f"{menuElements[i]}")
