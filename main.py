@@ -4,6 +4,7 @@ import msvcrt
 import os
 import time
 
+# All global variables
 gameMap = []
 basePlayerPos = []
 playerPos = []
@@ -29,9 +30,11 @@ art = """
     |____/|_| |_|\__,_|_|\_\___|
 """
 
+# Function for creating a map
 def createMap (sizeX, sizeY):
     global from_file
     
+    # Importing from file
     if from_file:
         with open('map.txt', 'r') as file:
             lines = file.readlines()
@@ -40,6 +43,7 @@ def createMap (sizeX, sizeY):
                 for char in line.strip():
                     temp.append(char)
                 gameMap.append(temp)
+    # Generating map
     else:
         for i in range(sizeY + 2):
             temp = []
@@ -50,6 +54,7 @@ def createMap (sizeX, sizeY):
                     temp.append('#')
                 else:
                     temp.append('.')
+            # Generating additional walls
             if active[0]:
                 amount = math.floor(random.random() * 6)
                 wall_temp = []
@@ -62,7 +67,7 @@ def createMap (sizeX, sizeY):
                         while place in wall_temp:
                             place = math.floor(random.random() * 10)
             gameMap.append(temp) 
-                    
+        # Generating holes in the walls
         if active[1]:
             placeX = math.floor(random.random() * 10) + 1
             placeY = math.floor(random.random() * 10) + 1
@@ -70,7 +75,7 @@ def createMap (sizeX, sizeY):
             gameMap[-1][placeX] = '.'
             gameMap[placeY][0] = '.'
             gameMap[placeY][-1] = '.'
-        
+# Generating apples on the map    
 def createApple(sizeX, sizeY):
     x = random.randint(0, sizeX - 1)
     y = random.randint(0, sizeY - 1)
@@ -80,10 +85,12 @@ def createApple(sizeX, sizeY):
         return True
     
     createApple(sizeX, sizeY)
-    
+# Printing map on the screen
 def printMap(points):
+    # Print points and lives
     if active[2]:
         print(f'Points: {points}\t Lives: {lives}\n\n')
+    # Print only points
     else:
         print(f'Points: {points}\n\n')
     for i in gameMap:
@@ -92,7 +99,7 @@ def printMap(points):
             for x in range(3):
                 print(' ', end='')
         print('\n')
-
+# All player movement
 def movePlayer(sizeX, sizeY):
     global playerPos
     global gameMap
@@ -126,7 +133,7 @@ def movePlayer(sizeX, sizeY):
             move = 'right'
             
         start = True
-                    
+    # Move without pressing a button
     else:
         match move:
             case 'up':
@@ -142,9 +149,10 @@ def movePlayer(sizeX, sizeY):
                 x = 1
                 y = 0
                 
-    
+    # New player position
     newPlayerPos = [[playerPos[0][0] + x, playerPos[0][1] + y]]
     
+    # Logic for holes in walls
     if newPlayerPos[0][1] == -1:
         newPlayerPos[0][1] = sizeY + 1
     elif newPlayerPos[0][1] == sizeY + 2:
@@ -155,6 +163,7 @@ def movePlayer(sizeX, sizeY):
     elif newPlayerPos[0][0] == sizeX + 2:
         newPlayerPos[0][0] = 0
             
+    # Logic for new player position
     for segment in playerPos[:-1]:
         newPlayerPos.append(segment)
     playerPos = newPlayerPos
@@ -162,6 +171,7 @@ def movePlayer(sizeX, sizeY):
     # Losing condition 1/3
     if gameMap[playerPos[0][1]][playerPos[0][0]] == '#':
         os.system('cls')
+        # Logic for lives
         if active[2] and lives > 1:
             lives -= 1
             move = ''
@@ -180,6 +190,7 @@ def movePlayer(sizeX, sizeY):
     # Losing condition 2/3
     if gameMap[playerPos[0][1]][playerPos[0][0]] == '%':
         os.system('cls')
+        # Logic for lives
         if active[2] and lives > 1:
             lives -= 1
             move = ''
@@ -198,6 +209,7 @@ def movePlayer(sizeX, sizeY):
     # Losing condition 3/3
     if gameMap[playerPos[0][1]][playerPos[0][0]] == '*' and start:
         os.system('cls')
+        # Logic for lives
         if active[2] and lives > 1:
             lives -= 1
             move = ''
@@ -242,9 +254,11 @@ def movePlayer(sizeX, sizeY):
     os.system('cls')
     printMap(points)
     
+# Function which is actually doing nothing
 def doNothing():
     return 0
 
+# Logic for enemies
 def enemy():
     global enemies
     global enemy_action
@@ -252,6 +266,7 @@ def enemy():
     global sizeX
     global sizeY
 
+    # Creating New enemies
     if len(enemies) == 0:
         x1 = random.randint(2, sizeX - 2)
         y1 = random.randint(2, sizeY - 2)
@@ -293,6 +308,7 @@ def enemy():
             for pos in enemies[i]:
                 gameMap[pos[0]][pos[1]] = '%'
             
+# Starting a game
 def game():
     global sizeX
     global sizeY
@@ -313,6 +329,7 @@ def game():
     points = 0
     lives = 3
     
+    # Creating starting player position
     basePlayerPos = [random.randint(1, sizeY), random.randint(1, sizeX)]
     
     createMap(sizeX, sizeY)
@@ -320,11 +337,13 @@ def game():
     playerPos.append(basePlayerPos)
     gameMap[playerPos[0][1]][playerPos[0][0]] = '*'
     
+    # Creating starting apples
     for i in range(apples):
         createApple(sizeX, sizeY)
         
     printMap(0)
 
+    # Main loop
     while gameOn:
         time.sleep(0.3)
         if active[4]:
@@ -332,11 +351,13 @@ def game():
         if movePlayer(sizeX, sizeY) == False:
             gameOn = False
           
+# Temporary highscore changer
 def highscoreChanger(x):
     global highscore
     if x > highscore:
         highscore = x
 
+# Executing settings in menu
 def executeActual(i):
     global sizeX
     global sizeY
@@ -429,6 +450,7 @@ def executeActual(i):
         case 4:
             return 1
             
+# Showing menu
 def menu ():
     global from_file
     
